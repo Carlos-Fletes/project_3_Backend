@@ -12,6 +12,11 @@ description = 'Spring Boot'
 bootJar {
     archiveFileName = 'app.jar'
 }
+jar {
+    archiveBaseName.set("app")
+    archiveVersion.set("0.0.1-SNAPSHOT")
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(17)
