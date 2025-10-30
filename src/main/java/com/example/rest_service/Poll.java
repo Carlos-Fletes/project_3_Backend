@@ -1,10 +1,12 @@
-package com.example;
+package com.example.rest_service;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "polls")
 public class Poll {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
