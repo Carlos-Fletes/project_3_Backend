@@ -104,3 +104,4 @@ public class Poll {
     public void setEndsAt(LocalDateTime endsAt){
         this.endsAt = endsAt;
     }
+}
