@@ -21,7 +21,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         // Redirect to Expo deep link
         String redirectUrl = "project3fe://auth?token=" + jwt;
-        // Use an explicit RedirectStrategy to avoid calling a method not present on this class
         new DefaultRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }
