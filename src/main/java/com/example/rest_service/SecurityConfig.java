@@ -20,13 +20,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return (request, response, authentication) -> {
-            response.sendRedirect("/"); // Replace with your Expo deep link if needed
-        };
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(request -> {
@@ -42,7 +35,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .successHandler(successHandler)
+                .successHandler(successHandler) // JWT + Expo deep link
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
