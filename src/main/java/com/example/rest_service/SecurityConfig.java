@@ -2,6 +2,7 @@ package com.example.rest_service;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -24,7 +25,7 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(request -> {
                 var config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("*")); // Allow all origins for Expo; restrict in production
+                config.setAllowedOrigins(List.of("*")); // adjust in production
                 config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
                 config.setAllowedHeaders(List.of("*"));
                 return config;
@@ -35,7 +36,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .successHandler(successHandler) // JWT + Expo deep link
+                .successHandler(successHandler)
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
