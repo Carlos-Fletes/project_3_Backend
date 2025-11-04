@@ -44,6 +44,9 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.7.0'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+    // Jackson for better JSON handling
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
