@@ -1,0 +1,6 @@
+email,google_id,name,first_name,last_name,profile_picture_url,username,bio,obrobucks
+john.doe@example.com,google_123456789,John Doe,John,Doe,https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150,johndoe,Software developer and coffee enthusiast,100
+jane.smith@example.com,google_987654321,Jane Smith,Jane,Smith,https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150,janesmith,UX/UI Designer passionate about creating beautiful user experiences,150
+mike.wilson@example.com,google_456789123,Mike Wilson,Mike,Wilson,https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150,mikewilson,Entrepreneur and tech enthusiast,200
+sarah.johnson@example.com,google_789123456,Sarah Johnson,Sarah,Johnson,https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150,sarahjohnson,Data scientist who loves turning data into insights,75
+alex.brown@example.com,google_321654987,Alex Brown,Alex,Brown,https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150,alexbrown,Full-stack developer with a passion for clean code,125
