@@ -3,45 +3,29 @@ package com.example.rest_service;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
 import java.util.List;
 
 @Configuration
 public class SecurityConfig {
 
-    // You can inject this if you want, but we'll define it as a bean below
-    private final String frontendUrl = "https://your-frontend-url.com"; // Replace with your actual frontend
+    private final AuthenticationSuccessHandler successHandler;
 
-    @Bean
-    public AuthenticationSuccessHandler successHandler() {
-        return new AuthenticationSuccessHandler() {
-            @Override
-            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                                org.springframework.security.core.Authentication authentication)
-                    throws IOException, ServletException {
-
-                // Redirect to your frontend or deep link
-                response.sendRedirect(frontendUrl + "/dashboard"); 
-            }
-        };
+    public SecurityConfig(AuthenticationSuccessHandler successHandler) {
+        this.successHandler = successHandler;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationSuccessHandler successHandler) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(request -> {
-                CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("*")); // Allow all origins; restrict in production
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                var config = new CorsConfiguration();
+                config.setAllowedOrigins(List.of("*")); // Allow all origins for Expo; restrict in production
+                config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
                 config.setAllowedHeaders(List.of("*"));
                 return config;
             }))
@@ -51,7 +35,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .successHandler(successHandler)
+                .successHandler(successHandler) // JWT + Expo deep link
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
