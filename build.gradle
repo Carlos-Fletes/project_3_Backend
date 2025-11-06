@@ -41,8 +41,8 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // for JSON serialization
 
     // Supabase dependencies
-    implementation 'org.postgresql:postgresql:42.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    runtimeOnly 'org.postgresql:postgresql:42.7.4'
+    //implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
     // Jackson for better JSON handling
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
