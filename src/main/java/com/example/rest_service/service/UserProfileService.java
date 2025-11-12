@@ -152,7 +152,10 @@ public class UserProfileService {
             userData.put("access_token", userProfile.getAccessToken());
             userData.put("refresh_token", userProfile.getRefreshToken());
             userData.put("token_expires_at", userProfile.getTokenExpiresAt());
-            userData.put("last_login", OffsetDateTime.now());
+            // Only set last_login if it's provided, otherwise let database handle it
+            if (userProfile.getLastLogin() != null) {
+                userData.put("last_login", userProfile.getLastLogin());
+            }
             
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, headers);
             

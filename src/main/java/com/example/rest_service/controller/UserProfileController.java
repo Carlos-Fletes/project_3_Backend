@@ -104,12 +104,16 @@ public class UserProfileController {
      * POST /api/users
      */
     @PostMapping
-    public ResponseEntity<UserProfile> createUser(@RequestBody UserProfile userProfile) {
+    public ResponseEntity<?> createUser(@RequestBody UserProfile userProfile) {
         try {
+            System.out.println("Creating user with payload: " + userProfile.toString());
             UserProfile createdUser = userProfileService.createUser(userProfile);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("Error creating user: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating user: " + e.getMessage());
         }
     }
 
