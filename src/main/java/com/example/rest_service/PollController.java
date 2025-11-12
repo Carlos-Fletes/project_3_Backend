@@ -3,6 +3,7 @@ package com.example.rest_service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import java.net.URI;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +19,12 @@ public class PollController {
         this.repo = repo;
     }
 
-    @PostMapping
+     @PostMapping
     public ResponseEntity<Poll> create(@RequestBody Poll body) {
-        // sensible defaults
+        // defaults
         if (body.getStatus() == null) body.setStatus(PollStatus.PENDING);
         if (body.getCreatedAt() == null) body.setCreatedAt(LocalDateTime.now());
+
         // basic validation
         if (body.getQuestion() == null || body.getQuestion().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -31,9 +33,8 @@ public class PollController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        // JPA will persist to polls and poll_options (via @ElementCollection)
         Poll saved = repo.save(body);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        return ResponseEntity.created(URI.create("/api/polls/" + saved.getId())).body(saved);
     }
 
     @GetMapping
@@ -62,7 +63,6 @@ public class PollController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // Optional: delete a poll (will cascade delete options if configured in DB)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!repo.existsById(id)) return ResponseEntity.notFound().build();

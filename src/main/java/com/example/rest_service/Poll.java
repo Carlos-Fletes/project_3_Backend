@@ -13,12 +13,10 @@ public class Poll {
     private Long id;
     private String question;
 
-    @ElementCollection
-    @CollectionTable(name = "poll_options", 
-    joinColumns = @JoinColumn(name = "poll_id"))
-
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "poll_options", joinColumns = @JoinColumn(name = "poll_id"))
     @Column(name = "option_text")
-    private List<String> options; // something like Yes or No or over or under
+    private List<String> options = new ArrayList<>(); // something like Yes or No or over or under
 
     //Had to brush up on this again heres my source
     // https://www.w3schools.com/java/java_enums.asp
