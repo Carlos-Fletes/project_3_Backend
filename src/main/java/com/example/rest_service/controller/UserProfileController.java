@@ -122,15 +122,20 @@ public class UserProfileController {
      * PUT /api/users/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<UserProfile> updateUser(@PathVariable String id, @RequestBody UserProfile userProfile) {
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserProfile userProfile) {
         try {
+            System.out.println("Updating user " + id + " with payload: " + userProfile.toString());
             UUID userId = UUID.fromString(id);
             UserProfile updatedUser = userProfileService.updateUser(userId, userProfile);
             return ResponseEntity.ok(updatedUser);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            System.err.println("Invalid UUID format: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid user ID format: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("Error updating user: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating user: " + e.getMessage());
         }
     }
 

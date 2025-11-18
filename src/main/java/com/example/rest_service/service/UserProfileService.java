@@ -184,6 +184,7 @@ public class UserProfileService {
      */
     public UserProfile updateUser(UUID id, UserProfile userProfile) {
         try {
+            System.out.println("UserProfileService.updateUser called for ID: " + id);
             HttpHeaders headers = supabaseConfig.createSupabaseHeaders();
             
             // Convert UserProfile to Map for JSON serialization
@@ -199,9 +200,13 @@ public class UserProfileService {
             if (userProfile.getRefreshToken() != null) userData.put("refresh_token", userProfile.getRefreshToken());
             if (userProfile.getTokenExpiresAt() != null) userData.put("token_expires_at", userProfile.getTokenExpiresAt());
             
+            System.out.println("Update payload: " + userData);
+            
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, headers);
             
             String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?id=eq." + id;
+            System.out.println("Sending PATCH request to: " + url);
+            
             ResponseEntity<UserProfile[]> response = restTemplate.exchange(
                 url, 
                 HttpMethod.PATCH, 
@@ -209,14 +214,19 @@ public class UserProfileService {
                 UserProfile[].class
             );
             
+            System.out.println("Supabase response status: " + response.getStatusCode());
             UserProfile[] updatedUsers = response.getBody();
             if (updatedUsers != null && updatedUsers.length > 0) {
+                System.out.println("User updated successfully");
                 return updatedUsers[0];
             }
-            throw new RuntimeException("Failed to update user profile");
+            throw new RuntimeException("Failed to update user profile - no user returned from database");
         } catch (HttpClientErrorException e) {
-            throw new RuntimeException("Error updating user profile: " + e.getResponseBodyAsString(), e);
+            System.err.println("HTTP Error updating user: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            throw new RuntimeException("Error updating user profile (HTTP " + e.getStatusCode() + "): " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
+            System.err.println("Exception updating user: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error updating user profile: " + e.getMessage(), e);
         }
     }
