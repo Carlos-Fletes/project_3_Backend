@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 @Configuration
 public class SupabaseConfig {
@@ -20,7 +21,10 @@ public class SupabaseConfig {
 
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        // Configure RestTemplate to support PATCH using Apache HttpComponents
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory());
+        return restTemplate;
     }
 
     // Getters for accessing configuration values
