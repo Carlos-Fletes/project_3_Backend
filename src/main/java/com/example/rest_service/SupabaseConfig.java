@@ -44,4 +44,14 @@ public class SupabaseConfig {
         headers.set("Prefer", "return=representation");
         return headers;
     }
+    
+    public HttpHeaders createSupabaseHeadersForUpdate() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", supabaseAnonKey);
+        headers.set("Authorization", "Bearer " + supabaseAnonKey);
+        headers.set("Content-Type", "application/json");
+        headers.set("Prefer", "return=representation");
+        headers.set("Content-Profile", "public");
+        return headers;
+    }
 }

@@ -185,9 +185,9 @@ public class UserProfileService {
     public UserProfile updateUser(UUID id, UserProfile userProfile) {
         try {
             System.out.println("UserProfileService.updateUser called for ID: " + id);
-            HttpHeaders headers = supabaseConfig.createSupabaseHeaders();
             
-            // Convert UserProfile to Map for JSON serialization
+            // Build update payload with ONLY updatable fields
+            // Explicitly exclude read-only fields: id, email, google_id, created_at, updated_at, last_login
             Map<String, Object> userData = new HashMap<>();
             if (userProfile.getName() != null) userData.put("name", userProfile.getName());
             if (userProfile.getFirstName() != null) userData.put("first_name", userProfile.getFirstName());
@@ -200,16 +200,18 @@ public class UserProfileService {
             if (userProfile.getRefreshToken() != null) userData.put("refresh_token", userProfile.getRefreshToken());
             if (userProfile.getTokenExpiresAt() != null) userData.put("token_expires_at", userProfile.getTokenExpiresAt());
             
-            System.out.println("Update payload: " + userData);
+            System.out.println("Update payload (updatable fields only): " + userData);
             
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, headers);
+            // Use special headers for PATCH operations
+            HttpHeaders patchHeaders = supabaseConfig.createSupabaseHeadersForUpdate();
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, patchHeaders);
             
             String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?id=eq." + id;
-            System.out.println("Sending PUT request to: " + url);
+            System.out.println("Sending PATCH request to: " + url);
             
             ResponseEntity<UserProfile[]> response = restTemplate.exchange(
                 url, 
-                HttpMethod.PUT, 
+                HttpMethod.PATCH, 
                 entity, 
                 UserProfile[].class
             );
@@ -236,7 +238,7 @@ public class UserProfileService {
      */
     public void updateLastLogin(UUID id) {
         try {
-            HttpHeaders headers = supabaseConfig.createSupabaseHeaders();
+            HttpHeaders headers = supabaseConfig.createSupabaseHeadersForUpdate();
             
             Map<String, Object> userData = new HashMap<>();
             userData.put("last_login", OffsetDateTime.now());
@@ -246,7 +248,7 @@ public class UserProfileService {
             String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?id=eq." + id;
             restTemplate.exchange(
                 url, 
-                HttpMethod.PUT, 
+                HttpMethod.PATCH, 
                 entity, 
                 String.class
             );
