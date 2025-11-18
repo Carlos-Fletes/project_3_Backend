@@ -205,11 +205,11 @@ public class UserProfileService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, headers);
             
             String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?id=eq." + id;
-            System.out.println("Sending PATCH request to: " + url);
+            System.out.println("Sending PUT request to: " + url);
             
             ResponseEntity<UserProfile[]> response = restTemplate.exchange(
                 url, 
-                HttpMethod.PATCH, 
+                HttpMethod.PUT, 
                 entity, 
                 UserProfile[].class
             );
@@ -246,7 +246,7 @@ public class UserProfileService {
             String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?id=eq." + id;
             restTemplate.exchange(
                 url, 
-                HttpMethod.PATCH, 
+                HttpMethod.PUT, 
                 entity, 
                 String.class
             );
