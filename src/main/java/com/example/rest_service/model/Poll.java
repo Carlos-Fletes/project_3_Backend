@@ -17,6 +17,7 @@ public class Poll {
 
     private List<String> options = new ArrayList<>();
 
+// Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
