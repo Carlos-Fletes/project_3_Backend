@@ -38,7 +38,8 @@ public class PollController {
         }
         PollStatus status = null;
         if (req.status != null) status = PollStatus.valueOf(req.status);
-        Poll created = service.create(req.question, req.options, req.category, req.endsAt, status);
+        UUID createdBy = UUID.fromString("9d947e28-5c8d-4dae-98a7-b2f0132d11c5"); //temp hardcode for testing
+        Poll created = service.create(req.question, req.options, req.category, req.endsAt, status, createdBy);
         return ResponseEntity.created(URI.create("/api/polls/" + created.getId())).body(created);
     }
 

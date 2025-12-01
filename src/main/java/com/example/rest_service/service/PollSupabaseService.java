@@ -82,27 +82,50 @@ public class PollSupabaseService {
         return Optional.of(p);
     }
 
-    public Poll create(String question, List<String> options, String category, OffsetDateTime endsAt, PollStatus status) {
+    public Poll create(String question,
+                       List<String> options,
+                       String category,
+                       OffsetDateTime endsAt,
+                       PollStatus status,
+                       UUID createdBy) {
+
         if (status == null) status = PollStatus.PENDING;
-        if (options == null || options.isEmpty()) throw new IllegalArgumentException("options required");
+        if (options == null || options.isEmpty()) {
+            throw new IllegalArgumentException("options required");
+        }
+        if (createdBy == null) {
+            throw new IllegalArgumentException("createdBy (user id) is required");
+        }
 
         Map<String,Object> payload = new HashMap<>();
         payload.put("question", question);
         payload.put("status", status.name());
         payload.put("category", category);
         payload.put("total_bets", 0);
-        payload.put("created_at", OffsetDateTime.now());
-        if (endsAt != null) payload.put("ends_at", endsAt);
+        payload.put("created_at", OffsetDateTime.now().toString());
+        if (endsAt != null) {
+            payload.put("ends_at", endsAt.toString());
+        }
+        payload.put("created_by", createdBy);
 
         HttpEntity<Object> entity = new HttpEntity<>(payload, writeHeaders());
-        ResponseEntity<Poll[]> insertResp = restTemplate.exchange(base("polls"), HttpMethod.POST, entity, Poll[].class);
+
+        ResponseEntity<Poll[]> insertResp = restTemplate.exchange(
+                base("polls"),
+                HttpMethod.POST,
+                entity,
+                Poll[].class
+        );
+
         Poll[] inserted = insertResp.getBody();
         if (inserted == null || inserted.length == 0 || inserted[0].getId() == null) {
             throw new RuntimeException("Failed to insert poll");
         }
+
         long pollId = inserted[0].getId();
 
         try {
+            // insert poll_options
             List<Map<String,Object>> optionRows = options.stream().map(txt -> {
                 Map<String,Object> row = new HashMap<>();
                 row.put("poll_id", pollId);
@@ -119,15 +142,32 @@ public class PollSupabaseService {
 
         } catch (Exception e) {
             try {
-                restTemplate.exchange(base("polls") + "?id=eq." + pollId, HttpMethod.DELETE, new HttpEntity<>(readHeaders()), String.class);
+                restTemplate.exchange(
+                        base("polls") + "?id=eq." + pollId,
+                        HttpMethod.DELETE,
+                        new HttpEntity<>(readHeaders()),
+                        String.class
+                );
             } catch (Exception ignored) {}
             throw e;
         }
     }
 
     public boolean delete(long id) {
-        restTemplate.exchange(base("poll_options") + "?poll_id=eq." + id, HttpMethod.DELETE, new HttpEntity<>(readHeaders()), String.class);
-        ResponseEntity<String> resp = restTemplate.exchange(base("polls") + "?id=eq." + id, HttpMethod.DELETE, new HttpEntity<>(readHeaders()), String.class);
+        // delete options first
+        restTemplate.exchange(
+                base("poll_options") + "?poll_id=eq." + id,
+                HttpMethod.DELETE,
+                new HttpEntity<>(readHeaders()),
+                String.class
+        );
+
+        ResponseEntity<String> resp = restTemplate.exchange(
+                base("polls") + "?id=eq." + id,
+                HttpMethod.DELETE,
+                new HttpEntity<>(readHeaders()),
+                String.class
+        );
         return resp.getStatusCode().is2xxSuccessful();
     }
 }
