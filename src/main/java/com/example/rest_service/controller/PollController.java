@@ -34,14 +34,31 @@ public class PollController {
 
     @PostMapping
     public ResponseEntity<Poll> create(@RequestBody CreatePollRequest req) {
-        if (req == null || req.question == null || req.question.isBlank() || req.options == null || req.options.isEmpty()) {
+
+        if (req == null ||
+            req.question == null || req.question.isBlank() ||
+            req.options == null || req.options.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         PollStatus status = null;
-        if (req.status != null) status = PollStatus.valueOf(req.status);
+        if (req.status != null) {
+            status = PollStatus.valueOf(req.status);
+        }
+
         UUID createdBy = UUID.fromString("9d947e28-5c8d-4dae-98a7-b2f0132d11c5"); //temp hardcode for testing
-        Poll created = service.create(req.question, req.options, req.category, req.endsAt, status, createdBy);
-        return ResponseEntity.created(URI.create("/api/polls/" + created.getId())).body(created);
+
+        Poll created = service.create(
+                req.question,
+                req.options,
+                req.category,
+                req.endsAt,
+                status,
+                createdBy
+        );
+
+        return ResponseEntity
+                .created(URI.create("/api/polls/" + created.getId()))
+                .body(created);
     }
 
     @DeleteMapping("/{id}")

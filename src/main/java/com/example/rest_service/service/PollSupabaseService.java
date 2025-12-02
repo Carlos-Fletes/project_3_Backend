@@ -64,23 +64,41 @@ public class PollSupabaseService {
 
 
     public List<Poll> list() {
-        String url = base("polls") + "?select=id,question,status,category,total_bets,created_at,ends_at&order=created_at.desc";
-        ResponseEntity<Poll[]> resp = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
-        List<Poll> polls = Arrays.asList(Optional.ofNullable(resp.getBody()).orElse(new Poll[0]));
-        Map<Long, List<String>> options = fetchOptionsForIds(polls.stream().map(Poll::getId).filter(Objects::nonNull).toList());
-        for (Poll p : polls) p.setOptions(options.getOrDefault(p.getId(), List.of()));
-        return polls;
-    }
+    String url = base("polls")
+        + "?select=id,question,status,category,total_bets,created_at,ends_at,created_by"
+        + "&order=created_at.desc";
 
-    public Optional<Poll> get(long id) {
-        String url = base("polls") + "?id=eq." + id + "&select=id,question,status,category,total_bets,created_at,ends_at";
-        ResponseEntity<Poll[]> resp = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
-        Poll[] arr = resp.getBody();
-        if (arr == null || arr.length == 0) return Optional.empty();
-        Poll p = arr[0];
-        p.setOptions(fetchOptions(id));
-        return Optional.of(p);
+    ResponseEntity<Poll[]> resp =
+        restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
+
+    List<Poll> polls = Arrays.asList(
+        Optional.ofNullable(resp.getBody()).orElse(new Poll[0])
+    );
+
+    Map<Long, List<String>> options =
+        fetchOptionsForIds(polls.stream().map(Poll::getId).filter(Objects::nonNull).toList());
+
+    for (Poll p : polls) {
+        p.setOptions(options.getOrDefault(p.getId(), List.of()));
     }
+    return polls;
+}
+
+public Optional<Poll> get(long id) {
+    String url = base("polls")
+        + "?id=eq." + id
+        + "&select=id,question,status,category,total_bets,created_at,ends_at,created_by";
+
+    ResponseEntity<Poll[]> resp =
+        restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
+
+    Poll[] arr = resp.getBody();
+    if (arr == null || arr.length == 0) return Optional.empty();
+
+    Poll p = arr[0];
+    p.setOptions(fetchOptions(id));
+    return Optional.of(p);
+}
 
     public Poll create(String question,
                        List<String> options,
@@ -125,7 +143,7 @@ public class PollSupabaseService {
         long pollId = inserted[0].getId();
 
         try {
-            // insert poll_options
+        // insert poll options
             List<Map<String,Object>> optionRows = options.stream().map(txt -> {
                 Map<String,Object> row = new HashMap<>();
                 row.put("poll_id", pollId);
