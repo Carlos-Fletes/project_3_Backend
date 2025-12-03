@@ -10,12 +10,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/gambling")
 public class GamblingController {
 
     private final UserProfileService userProfileService;
+    private final Random random = new Random();
 
     @Autowired
     public GamblingController(UserProfileService userProfileService) {
@@ -93,6 +95,234 @@ public class GamblingController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to open loot box: " + e.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * Play coin flip game
+     * POST /api/gambling/coin-flip
+     */
+    @PostMapping("/coin-flip")
+    public ResponseEntity<Map<String, Object>> coinFlip(@RequestBody Map<String, Object> request) {
+        try {
+            String userIdStr = (String) request.get("userId");
+            UUID userId = UUID.fromString(userIdStr);
+            int betAmount = ((Number) request.get("betAmount")).intValue();
+            String userChoice = (String) request.get("choice"); // "heads" or "tails"
+            
+            System.out.println("Coin flip for user: " + userId + ", bet: " + betAmount + ", choice: " + userChoice);
+            
+            // Get current user
+            Optional<UserProfile> userOpt = userProfileService.getUserById(userId);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+            
+            UserProfile user = userOpt.get();
+            int currentBalance = user.getObrobucks() != null ? user.getObrobucks() : 0;
+            
+            // Check if user has enough funds
+            if (currentBalance < betAmount) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Insufficient funds",
+                    "currentBalance", currentBalance,
+                    "required", betAmount
+                ));
+            }
+            
+            // Flip the coin (50/50)
+            String result = random.nextBoolean() ? "heads" : "tails";
+            boolean won = result.equals(userChoice.toLowerCase());
+            
+            // Calculate winnings
+            int winAmount = won ? betAmount * 2 : 0;
+            int newBalance = currentBalance - betAmount + winAmount;
+            int profit = winAmount - betAmount;
+            
+            // Update user balance
+            UserProfile updatedUser = new UserProfile();
+            updatedUser.setObrobucks(newBalance);
+            userProfileService.updateUser(userId, updatedUser);
+            
+            // Return response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("result", result);
+            response.put("won", won);
+            response.put("betAmount", betAmount);
+            response.put("winAmount", winAmount);
+            response.put("profit", profit);
+            response.put("newBalance", newBalance);
+            
+            System.out.println("Coin flip result: " + response);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("Error in coin flip: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to play coin flip: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Play dice roll game
+     * POST /api/gambling/dice-roll
+     */
+    @PostMapping("/dice-roll")
+    public ResponseEntity<Map<String, Object>> diceRoll(@RequestBody Map<String, Object> request) {
+        try {
+            String userIdStr = (String) request.get("userId");
+            UUID userId = UUID.fromString(userIdStr);
+            int betAmount = ((Number) request.get("betAmount")).intValue();
+            
+            System.out.println("Dice roll for user: " + userId + ", bet: " + betAmount);
+            
+            // Get current user
+            Optional<UserProfile> userOpt = userProfileService.getUserById(userId);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+            
+            UserProfile user = userOpt.get();
+            int currentBalance = user.getObrobucks() != null ? user.getObrobucks() : 0;
+            
+            // Check if user has enough funds
+            if (currentBalance < betAmount) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Insufficient funds",
+                    "currentBalance", currentBalance,
+                    "required", betAmount
+                ));
+            }
+            
+            // Roll the dice (1-6)
+            int diceResult = random.nextInt(6) + 1;
+            
+            // Win if roll is 4, 5, or 6
+            boolean won = diceResult >= 4;
+            
+            // Calculate winnings
+            int winAmount = won ? betAmount * 2 : 0;
+            int newBalance = currentBalance - betAmount + winAmount;
+            int profit = winAmount - betAmount;
+            
+            // Update user balance
+            UserProfile updatedUser = new UserProfile();
+            updatedUser.setObrobucks(newBalance);
+            userProfileService.updateUser(userId, updatedUser);
+            
+            // Return response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("diceResult", diceResult);
+            response.put("won", won);
+            response.put("betAmount", betAmount);
+            response.put("winAmount", winAmount);
+            response.put("profit", profit);
+            response.put("newBalance", newBalance);
+            
+            System.out.println("Dice roll result: " + response);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("Error in dice roll: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to play dice roll: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Play slot machine game
+     * POST /api/gambling/slot-machine
+     */
+    @PostMapping("/slot-machine")
+    public ResponseEntity<Map<String, Object>> slotMachine(@RequestBody Map<String, Object> request) {
+        try {
+            String userIdStr = (String) request.get("userId");
+            UUID userId = UUID.fromString(userIdStr);
+            int betAmount = ((Number) request.get("betAmount")).intValue();
+            
+            System.out.println("Slot machine for user: " + userId + ", bet: " + betAmount);
+            
+            // Get current user
+            Optional<UserProfile> userOpt = userProfileService.getUserById(userId);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+            
+            UserProfile user = userOpt.get();
+            int currentBalance = user.getObrobucks() != null ? user.getObrobucks() : 0;
+            
+            // Check if user has enough funds
+            if (currentBalance < betAmount) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Insufficient funds",
+                    "currentBalance", currentBalance,
+                    "required", betAmount
+                ));
+            }
+            
+            // Slot symbols: 🍒 🍋 🍊 💎 7️⃣
+            String[] symbols = {"cherry", "lemon", "orange", "diamond", "seven"};
+            
+            // Spin the slots (3 reels)
+            String reel1 = symbols[random.nextInt(symbols.length)];
+            String reel2 = symbols[random.nextInt(symbols.length)];
+            String reel3 = symbols[random.nextInt(symbols.length)];
+            
+            // Calculate winnings
+            int multiplier = 0;
+            String resultType = "loss";
+            
+            if (reel1.equals(reel2) && reel2.equals(reel3)) {
+                // All 3 match
+                if (reel1.equals("seven")) {
+                    multiplier = 10; // Jackpot!
+                    resultType = "jackpot";
+                } else if (reel1.equals("diamond")) {
+                    multiplier = 7;
+                    resultType = "big_win";
+                } else {
+                    multiplier = 5;
+                    resultType = "triple_match";
+                }
+            } else if (reel1.equals(reel2) || reel2.equals(reel3) || reel1.equals(reel3)) {
+                // 2 match
+                multiplier = 2;
+                resultType = "double_match";
+            }
+            // else: no match, multiplier stays 0
+            
+            int winAmount = betAmount * multiplier;
+            int newBalance = currentBalance - betAmount + winAmount;
+            int profit = winAmount - betAmount;
+            
+            // Update user balance
+            UserProfile updatedUser = new UserProfile();
+            updatedUser.setObrobucks(newBalance);
+            userProfileService.updateUser(userId, updatedUser);
+            
+            // Return response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("reels", new String[]{reel1, reel2, reel3});
+            response.put("resultType", resultType);
+            response.put("multiplier", multiplier);
+            response.put("betAmount", betAmount);
+            response.put("winAmount", winAmount);
+            response.put("profit", profit);
+            response.put("newBalance", newBalance);
+            
+            System.out.println("Slot machine result: " + response);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("Error in slot machine: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to play slot machine: " + e.getMessage()));
         }
     }
 
