@@ -86,6 +86,21 @@ public class UserProfileController {
     }
 
     /**
+     * Get user by GitHub ID
+     * GET /api/users/github/{githubId}
+     */
+    @GetMapping("/github/{githubId}")
+    public ResponseEntity<UserProfile> getUserByGithubId(@PathVariable String githubId) {
+        try {
+            Optional<UserProfile> user = userProfileService.getUserByGithubId(githubId);
+            return user.map(ResponseEntity::ok)
+                      .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * Search users by username
      * GET /api/users/search?username=value
      */

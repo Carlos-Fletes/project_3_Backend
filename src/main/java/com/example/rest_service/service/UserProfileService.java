@@ -132,6 +132,32 @@ public class UserProfileService {
     }
 
     /**
+     * Get user profile by GitHub ID
+     */
+    public Optional<UserProfile> getUserByGithubId(String githubId) {
+        try {
+            HttpHeaders headers = supabaseConfig.createSupabaseHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?github_id=eq." + githubId;
+            ResponseEntity<UserProfile[]> response = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                entity, 
+                UserProfile[].class
+            );
+            
+            UserProfile[] users = response.getBody();
+            if (users != null && users.length > 0) {
+                return Optional.of(users[0]);
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching user profile by GitHub ID: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Create a new user profile
      */
     public UserProfile createUser(UserProfile userProfile) {
@@ -142,6 +168,7 @@ public class UserProfileService {
             Map<String, Object> userData = new HashMap<>();
             userData.put("email", userProfile.getEmail());
             userData.put("google_id", userProfile.getGoogleId());
+            userData.put("github_id", userProfile.getGithubId());
             userData.put("name", userProfile.getName());
             userData.put("first_name", userProfile.getFirstName());
             userData.put("last_name", userProfile.getLastName());

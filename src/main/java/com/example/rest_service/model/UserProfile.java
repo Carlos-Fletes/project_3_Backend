@@ -15,6 +15,9 @@ public class UserProfile {
     @JsonProperty("google_id")
     private String googleId;
     
+    @JsonProperty("github_id")
+    private String githubId;
+    
     private String name;
     
     @JsonProperty("first_name")
@@ -84,6 +87,14 @@ public class UserProfile {
 
     public void setGoogleId(String googleId) {
         this.googleId = googleId;
+    }
+
+    public String getGithubId() {
+        return githubId;
+    }
+
+    public void setGithubId(String githubId) {
+        this.githubId = githubId;
     }
 
     public String getName() {
