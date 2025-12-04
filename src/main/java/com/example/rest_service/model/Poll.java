@@ -1,9 +1,11 @@
 package com.example.rest_service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Poll {
@@ -16,6 +18,9 @@ public class Poll {
     private OffsetDateTime ends_at;
 
     private List<String> options = new ArrayList<>();
+
+    @JsonProperty("created_by")
+    private UUID createdBy;
 
 // Getters and Setters
     public Long getId() { return id; }
@@ -41,4 +46,7 @@ public class Poll {
 
     public List<String> getOptions() { return options; }
     public void setOptions(List<String> options) { this.options = options; }
+
+    public UUID getCreatedBy() { return createdBy; }
+    public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
 }
