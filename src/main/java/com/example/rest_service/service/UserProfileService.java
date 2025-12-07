@@ -132,6 +132,32 @@ public class UserProfileService {
     }
 
     /**
+     * ✅ Get user profile by GitHub ID
+     */
+    public Optional<UserProfile> getUserByGithubId(String githubId) {
+        try {
+            HttpHeaders headers = supabaseConfig.createSupabaseHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?github_id=eq." + githubId;
+            ResponseEntity<UserProfile[]> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    UserProfile[].class
+            );
+
+            UserProfile[] users = response.getBody();
+            if (users != null && users.length > 0) {
+                return Optional.of(users[0]);
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching user profile by GitHub ID: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Create a new user profile
      */
     public UserProfile createUser(UserProfile userProfile) {
@@ -142,6 +168,7 @@ public class UserProfileService {
             Map<String, Object> userData = new HashMap<>();
             userData.put("email", userProfile.getEmail());
             userData.put("google_id", userProfile.getGoogleId());
+            userData.put("github_id", userProfile.getGithubId());  // 👈 NEW
             userData.put("name", userProfile.getName());
             userData.put("first_name", userProfile.getFirstName());
             userData.put("last_name", userProfile.getLastName());
@@ -187,7 +214,7 @@ public class UserProfileService {
             System.out.println("UserProfileService.updateUser called for ID: " + id);
             
             // Build update payload with ONLY updatable fields
-            // Explicitly exclude read-only fields: id, email, google_id, created_at, updated_at, last_login
+            // Explicitly exclude read-only fields: id, email, google_id, github_id, created_at, updated_at, last_login
             Map<String, Object> userData = new HashMap<>();
             if (userProfile.getName() != null) userData.put("name", userProfile.getName());
             if (userProfile.getFirstName() != null) userData.put("first_name", userProfile.getFirstName());
@@ -298,6 +325,62 @@ public class UserProfileService {
             return Arrays.asList(response.getBody());
         } catch (Exception e) {
             throw new RuntimeException("Error searching users by username: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * ✅ Create or update a user from GitHub OAuth
+     */
+    public UserProfile createOrUpdateGithubUser(
+            String githubId,
+            String email,
+            String name,
+            String username,
+            String avatarUrl,
+            String bio,
+            String accessToken
+    ) {
+        try {
+            Optional<UserProfile> existing = Optional.empty();
+
+            if (githubId != null) {
+                existing = getUserByGithubId(githubId);
+            }
+
+            if (existing.isEmpty() && email != null) {
+                existing = getUserByEmail(email);
+            }
+
+            if (existing.isPresent()) {
+                UserProfile current = existing.get();
+                UserProfile updates = new UserProfile();
+
+                // Only update non-null fields; updateUser will ignore missing ones
+                if (name != null) updates.setName(name);
+                if (username != null) updates.setUsername(username);
+                if (avatarUrl != null) updates.setProfilePictureUrl(avatarUrl);
+                if (bio != null) updates.setBio(bio);
+                if (accessToken != null) updates.setAccessToken(accessToken);
+
+                UserProfile updated = updateUser(current.getId(), updates);
+                updateLastLogin(current.getId());
+                return updated;
+            } else {
+                UserProfile newUser = new UserProfile();
+                newUser.setGithubId(githubId);
+                newUser.setEmail(email);
+                newUser.setName(name);
+                newUser.setUsername(username);
+                newUser.setProfilePictureUrl(avatarUrl);
+                newUser.setBio(bio);
+                newUser.setObrobucks(0);
+                newUser.setAccessToken(accessToken);
+                newUser.setLastLogin(OffsetDateTime.now());
+
+                return createUser(newUser);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating/updating GitHub user: " + e.getMessage(), e);
         }
     }
 }

@@ -14,6 +14,9 @@ public class UserProfile {
     
     @JsonProperty("google_id")
     private String googleId;
+
+    @JsonProperty("github_id")              // 👈 NEW: maps to github_id column in Supabase
+    private String githubId;
     
     private String name;
     
@@ -84,6 +87,14 @@ public class UserProfile {
 
     public void setGoogleId(String googleId) {
         this.googleId = googleId;
+    }
+
+    public String getGithubId() {           // 👈 NEW
+        return githubId;
+    }
+
+    public void setGithubId(String githubId) {  // 👈 NEW
+        this.githubId = githubId;
     }
 
     public String getName() {
@@ -196,6 +207,7 @@ public class UserProfile {
                 "id=" + id +
                 ", email='" + email + '\'' +
                 ", googleId='" + googleId + '\'' +
+                ", githubId='" + githubId + '\'' +   // 👈 include for logging
                 ", name='" + name + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
