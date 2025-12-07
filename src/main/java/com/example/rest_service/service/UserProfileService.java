@@ -267,24 +267,7 @@ public class UserProfileService {
      * Update user's last login time
      */
     public void updateLastLogin(UUID id) {
-        try {
-            HttpHeaders headers = supabaseConfig.createSupabaseHeadersForUpdate();
-            
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("last_login", OffsetDateTime.now());
-            
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, headers);
-            
-            String url = supabaseConfig.getSupabaseUrl() + "/rest/v1/user_profiles?id=eq." + id;
-            restTemplate.exchange(
-                url, 
-                HttpMethod.PATCH, 
-                entity, 
-                String.class
-            );
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating last login: " + e.getMessage(), e);
-        }
+         System.out.println("updateLastLogin called for id = " + id + " (no-op)");
     }
 
     /**
@@ -355,20 +338,21 @@ public class UserProfileService {
             }
 
             if (existing.isPresent()) {
-                UserProfile current = existing.get();
-                UserProfile updates = new UserProfile();
+    UserProfile current = existing.get();
+    UserProfile updates = new UserProfile();
 
-                // Only update non-null fields; updateUser will ignore missing ones
-                if (name != null) updates.setName(name);
-                if (username != null) updates.setUsername(username);
-                if (avatarUrl != null) updates.setProfilePictureUrl(avatarUrl);
-                if (bio != null) updates.setBio(bio);
-                if (accessToken != null) updates.setAccessToken(accessToken);
+    if (name != null) updates.setName(name);
+    if (username != null) updates.setUsername(username);
+    if (avatarUrl != null) updates.setProfilePictureUrl(avatarUrl);
+    if (bio != null) updates.setBio(bio);
+    if (accessToken != null) updates.setAccessToken(accessToken);
 
-                UserProfile updated = updateUser(current.getId(), updates);
-                updateLastLogin(current.getId());
-                return updated;
-            } else {
+    UserProfile updated = updateUser(current.getId(), updates);
+    // updateLastLogin(current.getId());  // TEMPORARILY DISABLED
+    return updated;
+            }
+
+            else {
                 UserProfile newUser = new UserProfile();
                 newUser.setGithubId(githubId);
                 newUser.setEmail(email);
