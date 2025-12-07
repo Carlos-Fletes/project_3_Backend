@@ -27,6 +27,16 @@ public class SupabaseConfig {
             supabaseUrl = "https://vyxaqysujjmhjsaonszw.supabase.co";
         }
         System.out.println(">>> Supabase URL in SupabaseConfig.init(): " + supabaseUrl);
+        System.out.println(">>> Supabase anon key is " + (supabaseAnonKey == null || supabaseAnonKey.isBlank() ? "NOT set (null/blank)" : "SET"));
+        
+        // Validate that API key is set
+        if (supabaseAnonKey == null || supabaseAnonKey.isBlank()) {
+            throw new IllegalStateException("Supabase anon key is NOT set. Set SUPABASE_ANON_KEY env var or supabase.key in application.yml");
+        }
+        
+        if (supabaseServiceRoleKey == null || supabaseServiceRoleKey.isBlank()) {
+            System.out.println("⚠️  WARNING: Supabase service role key is not set");
+        }
     }
 
     @Bean

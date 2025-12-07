@@ -168,22 +168,23 @@ public class UserProfileService {
             
             // Convert UserProfile to Map for JSON serialization
             Map<String, Object> userData = new HashMap<>();
-            userData.put("email", userProfile.getEmail());
-            userData.put("google_id", userProfile.getGoogleId());
-            userData.put("github_id", userProfile.getGithubId());  // 👈 NEW
-            userData.put("name", userProfile.getName());
-            userData.put("first_name", userProfile.getFirstName());
-            userData.put("last_name", userProfile.getLastName());
-            userData.put("profile_picture_url", userProfile.getProfilePictureUrl());
-            userData.put("username", userProfile.getUsername());
-            userData.put("bio", userProfile.getBio());
+            if (userProfile.getEmail() != null) userData.put("email", userProfile.getEmail());
+            if (userProfile.getGoogleId() != null) userData.put("google_id", userProfile.getGoogleId());
+            if (userProfile.getGithubId() != null) userData.put("github_id", userProfile.getGithubId());
+            if (userProfile.getName() != null) userData.put("name", userProfile.getName());
+            if (userProfile.getFirstName() != null) userData.put("first_name", userProfile.getFirstName());
+            if (userProfile.getLastName() != null) userData.put("last_name", userProfile.getLastName());
+            if (userProfile.getProfilePictureUrl() != null) userData.put("profile_picture_url", userProfile.getProfilePictureUrl());
+            if (userProfile.getUsername() != null) userData.put("username", userProfile.getUsername());
+            if (userProfile.getBio() != null) userData.put("bio", userProfile.getBio());
             userData.put("obrobucks", userProfile.getObrobucks() != null ? userProfile.getObrobucks() : 0);
-            userData.put("access_token", userProfile.getAccessToken());
-            userData.put("refresh_token", userProfile.getRefreshToken());
-            userData.put("token_expires_at", userProfile.getTokenExpiresAt());
+            if (userProfile.getAccessToken() != null) userData.put("access_token", userProfile.getAccessToken());
+            if (userProfile.getRefreshToken() != null) userData.put("refresh_token", userProfile.getRefreshToken());
+            // Only set token_expires_at if it's provided, otherwise let database handle it
+            if (userProfile.getTokenExpiresAt() != null) userData.put("token_expires_at", userProfile.getTokenExpiresAt().toString());
             // Only set last_login if it's provided, otherwise let database handle it
             if (userProfile.getLastLogin() != null) {
-                userData.put("last_login", userProfile.getLastLogin());
+                userData.put("last_login", userProfile.getLastLogin().toString());
             }
             
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userData, headers);
@@ -227,7 +228,7 @@ public class UserProfileService {
             if (userProfile.getObrobucks() != null) userData.put("obrobucks", userProfile.getObrobucks());
             if (userProfile.getAccessToken() != null) userData.put("access_token", userProfile.getAccessToken());
             if (userProfile.getRefreshToken() != null) userData.put("refresh_token", userProfile.getRefreshToken());
-            if (userProfile.getTokenExpiresAt() != null) userData.put("token_expires_at", userProfile.getTokenExpiresAt());
+            if (userProfile.getTokenExpiresAt() != null) userData.put("token_expires_at", userProfile.getTokenExpiresAt().toString());
             
             System.out.println("Update payload (updatable fields only): " + userData);
             

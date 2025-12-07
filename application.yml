@@ -36,8 +36,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# Supabase configuration
+# Supabase configuration - Using environment variables with defaults for local development
 supabase:
-  url: ${SUPABASE_URL:}
-  key: ${SUPABASE_ANON_KEY:}
-  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+  url: ${SUPABASE_URL:https://vyxaqysujjmhjsaonszw.supabase.co}
+  key: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5eGFxeXN1amptaGpzYW9uc3p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3MjY3NTcsImV4cCI6MjA3NzMwMjc1N30.A9VHd8uqfGQYsUscJUcAefuBt4A0Glg4_A-MuCEH5rs}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5eGFxeXN1amptaGpzYW9uc3p3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTcyNjc1NywiZXhwIjoyMDc3MzAyNzU3fQ.RikUJtwoRftj7kyw2ijElzGzBQ5DNpqZtQrx1rgTfRI}

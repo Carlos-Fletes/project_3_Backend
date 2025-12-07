@@ -2,6 +2,7 @@ package com.example.rest_service.controller;
 
 import com.example.rest_service.model.UserProfile;
 import com.example.rest_service.service.UserProfileService;
+import com.example.rest_service.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -269,6 +270,11 @@ public class UserProfileController {
             String avatarUrl = (String) gh.get("avatar_url");
             String bio = (String) gh.get("bio");
             String email = (String) gh.get("email"); // may be null
+            
+            // Generate default email if not provided by GitHub
+            if (email == null || email.isBlank()) {
+                email = username + "@github.local";
+            }
 
             // 3. Persist via Supabase through service layer
             UserProfile userProfile = userProfileService.createOrUpdateGithubUser(
@@ -281,7 +287,10 @@ public class UserProfileController {
                     accessToken
             );
 
-            // 4. Shape response for frontend
+            // 4. Generate JWT token for authentication
+            String jwtToken = JwtUtil.generateToken(userProfile.getEmail());
+            
+            // 5. Shape response for frontend
             Map<String, Object> result = new HashMap<>();
             result.put("id", userProfile.getId());
             result.put("name", userProfile.getName());
@@ -291,6 +300,7 @@ public class UserProfileController {
             result.put("obrobucks", userProfile.getObrobucks());
             result.put("github_id", userProfile.getGithubId());
             result.put("email", userProfile.getEmail());
+            result.put("token", jwtToken);  // ← JWT token for frontend authentication
 
             return ResponseEntity.ok(result);
 
