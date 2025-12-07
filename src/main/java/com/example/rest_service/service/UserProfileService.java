@@ -29,6 +29,8 @@ public class UserProfileService {
         this.supabaseConfig = supabaseConfig;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
+
+         System.out.println(">>> Supabase URL from config: " + supabaseConfig.getSupabaseUrl());
     }
 
     /**
