@@ -267,4 +267,59 @@ public class BettingController {
             return ResponseEntity.status(500).body(new ArrayList<>());
         }
     }
+
+    /**
+     * Get all bets for a user (for bet history)
+     * GET /api/betting/user/{userId}
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> getUserBets(@PathVariable String userId) {
+        try {
+            // Get all bets for this user with poll details
+            String url = base("bets") + "?user_id=eq." + userId + "&select=*&order=created_at.desc";
+            
+            ResponseEntity<Bet[]> resp = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(readHeaders()),
+                Bet[].class
+            );
+
+            List<Bet> bets = Arrays.asList(
+                Optional.ofNullable(resp.getBody()).orElse(new Bet[0])
+            );
+
+            // Enrich with poll information
+            List<Map<String, Object>> enrichedBets = new ArrayList<>();
+            
+            for (Bet bet : bets) {
+                Optional<Poll> pollOpt = pollService.get(bet.getPollId());
+                
+                Map<String, Object> betInfo = new HashMap<>();
+                betInfo.put("id", bet.getId());
+                betInfo.put("pollId", bet.getPollId());
+                betInfo.put("optionText", bet.getOptionText());
+                betInfo.put("amount", bet.getAmount());
+                betInfo.put("potentialPayout", bet.getPotentialPayout());
+                betInfo.put("createdAt", bet.getCreatedAt());
+                betInfo.put("isWinner", bet.getIsWinner());
+                
+                if (pollOpt.isPresent()) {
+                    Poll poll = pollOpt.get();
+                    betInfo.put("pollQuestion", poll.getQuestion());
+                    betInfo.put("pollStatus", poll.getStatus());
+                    betInfo.put("pollEndsAt", poll.getEnds_at());
+                }
+                
+                enrichedBets.add(betInfo);
+            }
+
+            return ResponseEntity.ok(enrichedBets);
+
+        } catch (Exception e) {
+            System.err.println("Error getting user bets: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ArrayList<>());
+        }
+    }
 }
