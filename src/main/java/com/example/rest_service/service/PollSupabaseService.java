@@ -62,43 +62,108 @@ public class PollSupabaseService {
         return out;
     }
 
+    // NEW METHOD: Fetch usernames for poll creators
+    private Map<String, String> fetchUsernames(List<String> userIds) {
+        if (userIds.isEmpty()) return Map.of();
+        
+        String in = userIds.stream()
+            .map(id -> "\"" + id + "\"")
+            .collect(Collectors.joining(","));
+        
+        String url = base("user_profiles") + "?id=in.(" + in + ")&select=id,username";
+        
+        try {
+            ResponseEntity<List> resp = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                new HttpEntity<>(readHeaders()), 
+                List.class
+            );
+            
+            Map<String, String> usernameMap = new HashMap<>();
+            List<Map<String, Object>> rows = resp.getBody();
+            
+            if (rows != null) {
+                for (Map<String, Object> r : rows) {
+                    String userId = String.valueOf(r.get("id"));
+                    String username = String.valueOf(r.get("username"));
+                    usernameMap.put(userId, username);
+                }
+            }
+            
+            return usernameMap;
+        } catch (Exception e) {
+            System.err.println("Error fetching usernames: " + e.getMessage());
+            return Map.of();
+        }
+    }
 
     public List<Poll> list() {
-    String url = base("polls")
-        + "?select=id,question,status,category,total_bets,created_at,ends_at,created_by"
-        + "&order=created_at.desc";
+        String url = base("polls")
+            + "?select=id,question,status,category,total_bets,created_at,ends_at,created_by"
+            + "&order=created_at.desc";
 
-    ResponseEntity<Poll[]> resp =
-        restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
+        ResponseEntity<Poll[]> resp =
+            restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
 
-    List<Poll> polls = Arrays.asList(
-        Optional.ofNullable(resp.getBody()).orElse(new Poll[0])
-    );
+        List<Poll> polls = Arrays.asList(
+            Optional.ofNullable(resp.getBody()).orElse(new Poll[0])
+        );
 
-    Map<Long, List<String>> options =
-        fetchOptionsForIds(polls.stream().map(Poll::getId).filter(Objects::nonNull).toList());
+        // Fetch options
+        Map<Long, List<String>> options =
+            fetchOptionsForIds(polls.stream().map(Poll::getId).filter(Objects::nonNull).toList());
 
-    for (Poll p : polls) {
-        p.setOptions(options.getOrDefault(p.getId(), List.of()));
+        // Fetch usernames for creators
+        List<String> creatorIds = polls.stream()
+            .map(Poll::getCreatedBy)
+            .filter(Objects::nonNull)
+            .map(UUID::toString)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        Map<String, String> usernames = fetchUsernames(creatorIds);
+
+        // Populate polls with options and usernames
+        for (Poll p : polls) {
+            p.setOptions(options.getOrDefault(p.getId(), List.of()));
+            
+            if (p.getCreatedBy() != null) {
+                String username = usernames.get(p.getCreatedBy().toString());
+                if (username != null && !username.equals("null")) {
+                    p.setCreatedByUsername(username);
+                }
+            }
+        }
+        
+        return polls;
     }
-    return polls;
-}
 
-public Optional<Poll> get(long id) {
-    String url = base("polls")
-        + "?id=eq." + id
-        + "&select=id,question,status,category,total_bets,created_at,ends_at,created_by";
+    public Optional<Poll> get(long id) {
+        String url = base("polls")
+            + "?id=eq." + id
+            + "&select=id,question,status,category,total_bets,created_at,ends_at,created_by";
 
-    ResponseEntity<Poll[]> resp =
-        restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
+        ResponseEntity<Poll[]> resp =
+            restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(readHeaders()), Poll[].class);
 
-    Poll[] arr = resp.getBody();
-    if (arr == null || arr.length == 0) return Optional.empty();
+        Poll[] arr = resp.getBody();
+        if (arr == null || arr.length == 0) return Optional.empty();
 
-    Poll p = arr[0];
-    p.setOptions(fetchOptions(id));
-    return Optional.of(p);
-}
+        Poll p = arr[0];
+        p.setOptions(fetchOptions(id));
+        
+        // Fetch username for creator
+        if (p.getCreatedBy() != null) {
+            Map<String, String> usernames = fetchUsernames(List.of(p.getCreatedBy().toString()));
+            String username = usernames.get(p.getCreatedBy().toString());
+            if (username != null && !username.equals("null")) {
+                p.setCreatedByUsername(username);
+            }
+        }
+        
+        return Optional.of(p);
+    }
 
     public Poll create(String question,
                        List<String> options,
@@ -143,7 +208,7 @@ public Optional<Poll> get(long id) {
         long pollId = inserted[0].getId();
 
         try {
-        // insert poll options
+            // insert poll options
             List<Map<String,Object>> optionRows = options.stream().map(txt -> {
                 Map<String,Object> row = new HashMap<>();
                 row.put("poll_id", pollId);
@@ -156,6 +221,16 @@ public Optional<Poll> get(long id) {
 
             Poll created = inserted[0];
             created.setOptions(new ArrayList<>(options));
+            
+            // Fetch username for creator
+            if (created.getCreatedBy() != null) {
+                Map<String, String> usernames = fetchUsernames(List.of(created.getCreatedBy().toString()));
+                String username = usernames.get(created.getCreatedBy().toString());
+                if (username != null && !username.equals("null")) {
+                    created.setCreatedByUsername(username);
+                }
+            }
+            
             return created;
 
         } catch (Exception e) {
