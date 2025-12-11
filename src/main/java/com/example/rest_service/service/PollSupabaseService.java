@@ -62,41 +62,40 @@ public class PollSupabaseService {
         return out;
     }
 
-    // NEW METHOD: Fetch usernames for poll creators
     private Map<String, String> fetchUsernames(List<String> userIds) {
-        if (userIds.isEmpty()) return Map.of();
+    if (userIds.isEmpty()) return Map.of();
+    
+    String in = userIds.stream()
+        .map(id -> "\"" + id + "\"")
+        .collect(Collectors.joining(","));
+    
+    String url = base("user_profiles") + "?id=in.(" + in + ")&select=id,username";
+    
+    try {
+        ResponseEntity<List> resp = restTemplate.exchange(
+            url, 
+            HttpMethod.GET, 
+            new HttpEntity<>(readHeaders()), 
+            List.class
+        );
         
-        String in = userIds.stream()
-            .map(id -> "\"" + id + "\"")
-            .collect(Collectors.joining(","));
+        Map<String, String> usernameMap = new HashMap<>();
+        List<Map<String, Object>> rows = resp.getBody();
         
-        String url = base("user_profiles") + "?id=in.(" + in + ")&select=id,username";
-        
-        try {
-            ResponseEntity<List> resp = restTemplate.exchange(
-                url, 
-                HttpMethod.GET, 
-                new HttpEntity<>(readHeaders()), 
-                List.class
-            );
-            
-            Map<String, String> usernameMap = new HashMap<>();
-            List<Map<String, Object>> rows = resp.getBody();
-            
-            if (rows != null) {
-                for (Map<String, Object> r : rows) {
-                    String userId = String.valueOf(r.get("id"));
-                    String username = String.valueOf(r.get("username"));
-                    usernameMap.put(userId, username);
-                }
+        if (rows != null) {
+            for (Map<String, Object> r : rows) {
+                String userId = String.valueOf(r.get("id"));
+                String username = String.valueOf(r.get("username"));
+                usernameMap.put(userId, username);
             }
-            
-            return usernameMap;
-        } catch (Exception e) {
-            System.err.println("Error fetching usernames: " + e.getMessage());
-            return Map.of();
         }
+        
+        return usernameMap;
+    } catch (Exception e) {
+        System.err.println("Error fetching usernames: " + e.getMessage());
+        return Map.of();
     }
+}
 
     public List<Poll> list() {
         String url = base("polls")
