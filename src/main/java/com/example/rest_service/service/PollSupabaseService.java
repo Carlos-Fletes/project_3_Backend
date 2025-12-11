@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLEncoder;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -261,5 +262,28 @@ public class PollSupabaseService {
                 String.class
         );
         return resp.getStatusCode().is2xxSuccessful();
+    }
+
+    public List<Poll> search(String q, String category) {
+        try {
+            String url = base("polls");
+            List<String> filters = new ArrayList<>();
+            if (q != null && !q.isBlank()) {
+                String encoded = URLEncoder.encode("%" + q + "%", StandardCharsets.UTF_8);
+                filters.add("question=ilike." + encoded.replace("%25","%"));
+            }
+            if (category != null && !category.isBlank()) {
+                filters.add("category=eq." + URLEncoder.encode(category, StandardCharsets.UTF_8));
+            }
+            if (!filters.isEmpty()) {
+                url = url + "?" + String.join("&", filters);
+            }
+            HttpEntity<String> entity = new HttpEntity<>(readHeaders());
+            ResponseEntity<Poll[]> resp = restTemplate.exchange(url, HttpMethod.GET, entity, Poll[].class);
+            List<Poll> polls = Arrays.asList(resp.getBody());
+            return polls;
+        } catch (Exception e) {
+            throw new RuntimeException("Search failed", e);
+        }
     }
 }

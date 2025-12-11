@@ -271,4 +271,18 @@ public class PollController {
                 .body(Map.of("error", "Failed to get winner"));
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<com.example.rest_service.model.Poll>> search(
+            @RequestParam(name="q", required=false) String q,
+            @RequestParam(name="category", required=false) String category) {
+        try {
+            List<com.example.rest_service.model.Poll> results = service.search(q, category);
+            return ResponseEntity.ok(results);
+        } 
+        catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
