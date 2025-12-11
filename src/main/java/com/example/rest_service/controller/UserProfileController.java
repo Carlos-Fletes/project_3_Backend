@@ -29,24 +29,11 @@ public class UserProfileController {
     private final UserProfileService userProfileService;
 
     // Inject GitHub credentials from application.properties
-   @Value("${github.android.client.id}")
-    private String githubAndroidClientId;
+    @Value("${github.client.id}")
+    private String githubClientId;
 
-    @Value("${github.android.client.secret}")
-    private String githubAndroidClientSecret;
-
-    @Value("${github.android.redirect.uri}")
-    private String githubAndroidRedirectUri;
-
-    @Value("${github.web.client.id}")
-    private String githubWebClientId;
-
-    @Value("${github.web.client.secret}")
-    private String githubWebClientSecret;
-
-    @Value("${github.web.redirect.uri}")
-    private String githubWebRedirectUri;
-
+    @Value("${github.client.secret}")
+    private String githubClientSecret;
 
     @Autowired
     public UserProfileController(UserProfileService userProfileService) {
@@ -219,131 +206,108 @@ public class UserProfileController {
      * Body: { "code": "<github_auth_code_from_expo>" }
      */
     @PostMapping("/auth/github")
-public ResponseEntity<?> githubLogin(@RequestBody Map<String, String> body) {
-    String code = body.get("code");
-    String platform = body.getOrDefault("platform", "android"); // default to android if missing
+    public ResponseEntity<?> githubLogin(@RequestBody Map<String, String> body) {
+        String code = body.get("code");
+        if (code == null || code.isEmpty()) {
+            return ResponseEntity.badRequest().body("Missing 'code' in request body");
+        }
 
-    if (code == null || code.isEmpty()) {
-        return ResponseEntity.badRequest().body("Missing 'code' in request body");
+        try {
+            // 1. Exchange code for access token
+            String tokenUrl = "https://github.com/login/oauth/access_token";
+            RestTemplate restTemplate = new RestTemplate();
+
+            Map<String, String> params = new HashMap<>();
+            params.put("client_id", githubClientId);
+            params.put("client_secret", githubClientSecret);
+            params.put("code", code);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(params, headers);
+
+            ResponseEntity<Map> tokenResponse =
+                    restTemplate.postForEntity(tokenUrl, requestEntity, Map.class);
+
+            if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Failed to exchange code for access token");
+            }
+
+            String accessToken = (String) tokenResponse.getBody().get("access_token");
+            if (accessToken == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("GitHub did not return an access token");
+            }
+
+            // 2. Fetch GitHub user profile
+            HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
+            userHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
+
+            ResponseEntity<Map> userResponse = restTemplate.exchange(
+                    "https://api.github.com/user",
+                    HttpMethod.GET,
+                    userRequest,
+                    Map.class
+            );
+
+            if (!userResponse.getStatusCode().is2xxSuccessful() || userResponse.getBody() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Failed to fetch GitHub user profile");
+            }
+
+            Map<String, Object> gh = userResponse.getBody();
+
+            Object rawName = gh.get("name");
+            String name = rawName != null ? rawName.toString() : null;
+            String githubId = gh.get("id") != null ? gh.get("id").toString() : null;
+            String username = (String) gh.get("login");
+            String avatarUrl = (String) gh.get("avatar_url");
+            String bio = (String) gh.get("bio");
+            String email = (String) gh.get("email"); // may be null
+            
+            // Generate default email if not provided by GitHub
+            if (email == null || email.isBlank()) {
+                email = username + "@github.local";
+            }
+
+            // 3. Persist via Supabase through service layer
+            UserProfile userProfile = userProfileService.createOrUpdateGithubUser(
+                    githubId,
+                    email,
+                    name != null ? name : username, // fallback if name is null
+                    username,
+                    avatarUrl,
+                    bio,
+                    accessToken
+            );
+
+            // 4. Generate JWT token for authentication
+            String jwtToken = JwtUtil.generateToken(userProfile.getEmail());
+            
+            // 5. Shape response for frontend
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", userProfile.getId());
+            result.put("name", userProfile.getName());
+            result.put("username", userProfile.getUsername());
+            result.put("profile_picture_url", userProfile.getProfilePictureUrl());
+            result.put("bio", userProfile.getBio());
+            result.put("obrobucks", userProfile.getObrobucks());
+            result.put("github_id", userProfile.getGithubId());
+            result.put("email", userProfile.getEmail());
+            result.put("token", jwtToken);  // ← JWT token for frontend authentication
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("GitHub login failed: " + e.getMessage());
+        }
     }
-
-    // 0. Decide which GitHub OAuth app to use
-    final String clientId;
-    final String clientSecret;
-    final String redirectUri;
-
-    if ("web".equalsIgnoreCase(platform)) {
-        clientId = githubWebClientId;
-        clientSecret = githubWebClientSecret;
-        redirectUri = githubWebRedirectUri;
-        System.out.println("Using WEB GitHub OAuth app for code exchange");
-    } else {
-        clientId = githubAndroidClientId;
-        clientSecret = githubAndroidClientSecret;
-        redirectUri = githubAndroidRedirectUri;
-        System.out.println("Using ANDROID GitHub OAuth app for code exchange");
-    }
-
-    try {
-        // 1. Exchange code for access token
-        String tokenUrl = "https://github.com/login/oauth/access_token";
-        RestTemplate restTemplate = new RestTemplate();
-
-        Map<String, String> params = new HashMap<>();
-        params.put("client_id", clientId);
-        params.put("client_secret", clientSecret);
-        params.put("code", code);
-        params.put("redirect_uri", redirectUri); // must match GitHub app config
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(params, headers);
-
-        ResponseEntity<Map> tokenResponse =
-                restTemplate.postForEntity(tokenUrl, requestEntity, Map.class);
-
-        if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
-            System.err.println("GitHub token exchange failed: " + tokenResponse);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Failed to exchange code for access token");
-        }
-
-        String accessToken = (String) tokenResponse.getBody().get("access_token");
-        if (accessToken == null) {
-            System.err.println("GitHub did not return access_token. Response body: " + tokenResponse.getBody());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("GitHub did not return an access token");
-        }
-
-        // 2. Fetch GitHub user profile
-        HttpHeaders userHeaders = new HttpHeaders();
-        userHeaders.setBearerAuth(accessToken);
-        userHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-        HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
-
-        ResponseEntity<Map> userResponse = restTemplate.exchange(
-                "https://api.github.com/user",
-                HttpMethod.GET,
-                userRequest,
-                Map.class
-        );
-
-        if (!userResponse.getStatusCode().is2xxSuccessful() || userResponse.getBody() == null) {
-            System.err.println("Failed to fetch GitHub user. Response: " + userResponse);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Failed to fetch GitHub user profile");
-        }
-
-        Map<String, Object> gh = userResponse.getBody();
-
-        Object rawName = gh.get("name");
-        String name = rawName != null ? rawName.toString() : null;
-        String githubId = gh.get("id") != null ? gh.get("id").toString() : null;
-        String username = (String) gh.get("login");
-        String avatarUrl = (String) gh.get("avatar_url");
-        String bio = (String) gh.get("bio");
-        String email = (String) gh.get("email"); // may be null
-
-        // Generate default email if not provided by GitHub
-        if (email == null || email.isBlank()) {
-            email = username + "@github.local";
-        }
-
-        // 3. Persist via Supabase through service layer
-        UserProfile userProfile = userProfileService.createOrUpdateGithubUser(
-                githubId,
-                email,
-                name != null ? name : username, // fallback if name is null
-                username,
-                avatarUrl,
-                bio,
-                accessToken
-        );
-
-        // 4. Generate JWT token for authentication
-        String jwtToken = JwtUtil.generateToken(userProfile.getEmail());
-
-        // 5. Shape response for frontend
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", userProfile.getId());
-        result.put("name", userProfile.getName());
-        result.put("username", userProfile.getUsername());
-        result.put("profile_picture_url", userProfile.getProfilePictureUrl());
-        result.put("bio", userProfile.getBio());
-        result.put("obrobucks", userProfile.getObrobucks());
-        result.put("github_id", userProfile.getGithubId());
-        result.put("email", userProfile.getEmail());
-        result.put("token", jwtToken);  // ← JWT token for frontend authentication
-
-        return ResponseEntity.ok(result);
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("GitHub login failed: " + e.getMessage());
-    }
-}
 }
