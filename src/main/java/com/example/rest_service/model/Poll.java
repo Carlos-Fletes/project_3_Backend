@@ -21,8 +21,11 @@ public class Poll {
 
     @JsonProperty("created_by")
     private UUID createdBy;
+    
+    @JsonProperty("created_by_username")
+    private String createdByUsername;  // NEW FIELD
 
-// Getters and Setters
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -49,4 +52,7 @@ public class Poll {
 
     public UUID getCreatedBy() { return createdBy; }
     public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
+    
+    public String getCreatedByUsername() { return createdByUsername; }
+    public void setCreatedByUsername(String createdByUsername) { this.createdByUsername = createdByUsername; }
 }
