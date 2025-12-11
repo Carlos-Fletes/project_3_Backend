@@ -74,12 +74,16 @@ public class PollController {
             req.options == null || req.options.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+        
         PollStatus status = null;
         if (req.status != null) {
             status = PollStatus.valueOf(req.status);
         }
 
-        UUID createdBy = UUID.fromString("9d947e28-5c8d-4dae-98a7-b2f0132d11c5"); //temp hardcode for testing
+        // Use the createdBy from request, or fallback to hardcoded for testing
+        UUID createdBy = req.createdBy != null 
+            ? req.createdBy 
+            : UUID.fromString("9d947e28-5c8d-4dae-98a7-b2f0132d11c5");
 
         Poll created = service.create(
                 req.question,
